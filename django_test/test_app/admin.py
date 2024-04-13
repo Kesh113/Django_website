@@ -1,4 +1,6 @@
 from django.contrib import admin, messages
+from django.utils.safestring import mark_safe
+
 from .models import Test_app, Category
 
 
@@ -21,11 +23,11 @@ class MarriedFilter(admin.SimpleListFilter):
 
 @admin.register(Test_app)
 class TestAdmin(admin.ModelAdmin):
-    fields = ['title', 'slug', 'content', 'cat', 'husband', 'tags']
-    # readonly_fields = ['slug']
+    fields = ['title', 'slug', 'content', 'photo', 'post_photo', 'cat', 'husband', 'tags']
+    readonly_fields = ['post_photo']
     prepopulated_fields = {"slug": ("title", )}
     filter_horizontal = ('tags', )
-    list_display = ('title', 'time_create', 'is_published', 'cat', 'brief_info')
+    list_display = ('title', 'post_photo', 'time_create', 'is_published', 'cat')
     list_display_links = ('title', )
     ordering = ['-time_create', 'title']
     list_editable = ('is_published', )
@@ -33,10 +35,13 @@ class TestAdmin(admin.ModelAdmin):
     actions = ('set_published', 'set_draft')
     search_fields = ['title', 'cat__name']
     list_filter = [MarriedFilter, 'cat__name', 'is_published']
+    save_on_top = True
 
-    @admin.display(description="Краткое описание", ordering='content')
-    def brief_info(self, test_app: Test_app):
-        return f"Описание {len(test_app.content)} символов."
+    @admin.display(description="Изображение", ordering='content')
+    def post_photo(self, test_app: Test_app):
+        if test_app.photo:
+            return mark_safe(f"<img src='{test_app.photo.url}' width=150>")
+        return "Без фото"
 
     @admin.action(description='Опубликовать выбранные записи')
     def set_published(self, request, queryset):
