@@ -3,6 +3,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.template.defaultfilters import slugify
+from django.views import View
+from django.views.generic import TemplateView, ListView
 
 from .forms import AddPostForm, UploadFileForm
 from .models import Test_app, Category, TagPost, UploadFiles
@@ -20,23 +22,26 @@ class MyClass:
     def get_info(self):
         return self.a + self.b
 
-def index(request):
-    # t = render_to_string('test_app/index.html')
-    # return HttpResponse(t)
-    posts = Test_app.published.all().select_related('cat')
-    data = {
+class TestAppHome(ListView):
+    #model = Test_app
+    template_name = 'test_app/index.html'
+    context_object_name = 'posts'
+    extra_context = {
         'title': 'главная страница',
         'menu': menu,
-        'float': 28.56,
-        'lst': [1, 2, 'abc', True],
-        'set': {1, 2, 3, 2, 5},
-        'dict': {'key_1': 'value_1', 'key_2': 'value_2'},
-        'obj': MyClass(10, 20),
-        'url': slugify("The main page"),
-        'posts': posts,
+        #'float': 28.56,
+        #'lst': [1, 2, 'abc', True],
+        #'set': {1, 2, 3, 2, 5},
+        #'dict': {'key_1': 'value_1', 'key_2': 'value_2'},
+        #'obj': MyClass(10, 20),
+        #'url': slugify("The main page"),
+        #'posts': Test_app.published.all().select_related('cat'),
         'cat_selected': 0,
                  }
-    return render(request, 'test_app/index.html', context=data)
+
+    def get_queryset(self):
+        return Test_app.published.all().select_related('cat')
+
 
 # def handle_uploaded_file(f):
 #     with open(f"uploads/{f.name}", 'wb+') as destination:
@@ -81,26 +86,27 @@ def show_post(request, post_slug):
     }
     return render(request, 'test_app/post.html', data)
 
-def addpage(request):
-    if request.method == 'POST':
+class AddPage(View):
+    def get(self, request):
+        form = AddPostForm()
+        data = {
+            'menu': menu,
+            'title': 'Добавление статьи',
+            'form': form,
+        }
+        return render(request, 'test_app/addpage.html', data)
+
+    def post(self, request):
         form = AddPostForm(request.POST, request.FILES)
         if form.is_valid():
-            # print(form.cleaned_data)
-            # try:
-            #     Test_app.objects.create(**form.cleaned_data)
-            #     return redirect("home")
-            # except:
-            #     form.add_error(None, "Ошибка добавления поста")
             form.save()
             return redirect("home")
-    else:
-        form = AddPostForm()
-    data = {
-        'menu': menu,
-        'title': 'Добавление статьи',
-        'form': form,
-    }
-    return render(request, 'test_app/addpage.html', data)
+        data = {
+            'menu': menu,
+            'title': 'Добавление статьи',
+            'form': form,
+        }
+        return render(request, 'test_app/addpage.html', data)
 
 def contact(request):
     return HttpResponse("Обратная связь")
@@ -118,6 +124,23 @@ def show_category(request, cat_slug):
         'cat_selected': category.pk,
     }
     return render(request, 'test_app/index.html', context=data)
+
+class TestAppCategory(ListView):
+    template_name = 'test_app/index.html'
+    context_object_name = 'posts'
+    allow_empty = False
+
+    def get_queryset(self):
+        return Test_app.published.filter(cat__slug=self.kwargs['cat_slug']).select_related("cat")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        cat = context['posts'][0].cat
+        context['title'] = 'Категория - ' + cat.name
+        context['menu'] = menu
+        context['cat_selected'] = cat.pk
+        return context
+
 
 def show_tag_postlist(request, tag_slug):
     tag = get_object_or_404(TagPost, slug=tag_slug)
