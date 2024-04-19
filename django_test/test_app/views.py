@@ -1,10 +1,10 @@
 from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.template.loader import render_to_string
 from django.template.defaultfilters import slugify
 from django.views import View
-from django.views.generic import TemplateView, ListView
+from django.views.generic import TemplateView, ListView, DetailView, FormView
 
 from .forms import AddPostForm, UploadFileForm
 from .models import Test_app, Category, TagPost, UploadFiles
@@ -86,27 +86,57 @@ def show_post(request, post_slug):
     }
     return render(request, 'test_app/post.html', data)
 
-class AddPage(View):
-    def get(self, request):
-        form = AddPostForm()
-        data = {
-            'menu': menu,
-            'title': 'Добавление статьи',
-            'form': form,
-        }
-        return render(request, 'test_app/addpage.html', data)
+class ShowPost(DetailView):
+    model = Test_app
+    template_name = 'test_app/post.html'
+    slug_url_kwarg = 'post_slug'
+    context_object_name = 'post'
 
-    def post(self, request):
-        form = AddPostForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            return redirect("home")
-        data = {
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = context['post'].title
+        context['menu'] = menu
+        return context
+
+    def get_object(self, queryset=None):
+        return get_object_or_404(Test_app.published, slug=self.kwargs[self.slug_url_kwarg])
+
+class AddPage(FormView):
+    form_class = AddPostForm
+    template_name = 'test_app/addpage.html'
+    success_url = reverse_lazy("home")
+    extra_context = {
             'menu': menu,
             'title': 'Добавление статьи',
-            'form': form,
         }
-        return render(request, 'test_app/addpage.html', data)
+
+    def form_valid(self, form):
+        print(form.cleaned_data)
+        form.save()
+        return super().form_valid(form)
+
+
+# class AddPage(View):
+#     def get(self, request):
+#         form = AddPostForm()
+#         data = {
+#             'menu': menu,
+#             'title': 'Добавление статьи',
+#             'form': form,
+#         }
+#         return render(request, 'test_app/addpage.html', data)
+#
+#     def post(self, request):
+#         form = AddPostForm(request.POST, request.FILES)
+#         if form.is_valid():
+#             form.save()
+#             return redirect("home")
+#         data = {
+#             'menu': menu,
+#             'title': 'Добавление статьи',
+#             'form': form,
+#         }
+#         return render(request, 'test_app/addpage.html', data)
 
 def contact(request):
     return HttpResponse("Обратная связь")
@@ -154,3 +184,18 @@ def show_tag_postlist(request, tag_slug):
     }
 
     return render(request, 'test_app/index.html', context=data)
+
+class ShowTagPostList(ListView):
+    template_name = 'test_app/index.html'
+    allow_empty = False
+    context_object_name = 'posts'
+    def get_queryset(self):
+        return Test_app.published.filter(tags__slug=self.kwargs['tag_slug']).select_related("cat")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        tag = TagPost.objects.get(slug=self.kwargs['tag_slug'])
+        context['title'] = 'Тэг - ' + repr(tag.tag)
+        context['menu'] = menu
+        context['cat_selected'] = None
+        return context
