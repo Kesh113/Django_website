@@ -11,8 +11,10 @@ urlpatterns = [
     path('cats/<int:cat_id>/', views.categories, name='cats_id'),    # http://127.0.0.1:8000/cats/1
     path('cats/<slug:cat_slug>/', views.categories_by_slug, name='cats'),  # http://127.0.0.1:8000/cats/dda/
     #re_path(r'^archive/(?P<year>[0-9]{4})/', views.archive),  # http://127.0.0.1:8000/archive/1993/
-    path("archive/<year4:year>/", views.archive, name='archive'),   # http://127.0.0.1:8000/archive/1993/
+    path('archive/<year4:year>/', views.archive, name='archive'),   # http://127.0.0.1:8000/archive/1993/
     path('addpage/', views.AddPage.as_view(), name='add_page'),
+    path('edit/<slug:slug>/', views.UpdatePage.as_view(), name='edit_page'),
+    path('delete/<slug:slug>/', views.DeletePage.as_view(), name='delete_page'),
     path('contact/', views.contact, name='contact'),
     path('login/', views.login, name='login'),
     path('post/<slug:post_slug>/', views.ShowPost.as_view(), name='post'),

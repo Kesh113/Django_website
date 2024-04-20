@@ -4,40 +4,30 @@ from django.urls import reverse, reverse_lazy
 from django.template.loader import render_to_string
 from django.template.defaultfilters import slugify
 from django.views import View
-from django.views.generic import TemplateView, ListView, DetailView, FormView
+from django.views.generic import TemplateView, ListView, DetailView, FormView, CreateView, UpdateView, DeleteView
 
 from .forms import AddPostForm, UploadFileForm
 from .models import Test_app, Category, TagPost, UploadFiles
+from .utils import DataMixin
 
-menu = [{'title': "О сайте", 'url_name': 'about'},
-    {'title': "Добавить статью", 'url_name': 'add_page'},
-    {'title': "Обратная связь", 'url_name': 'contact'},
-    {'title': "Войти", 'url_name': 'login'},
-]
-class MyClass:
-    def __init__(self, a, b):
-        self.a = a
-        self.b = b
-
-    def get_info(self):
-        return self.a + self.b
-
-class TestAppHome(ListView):
+class TestAppHome(DataMixin, ListView):
     #model = Test_app
     template_name = 'test_app/index.html'
     context_object_name = 'posts'
-    extra_context = {
-        'title': 'главная страница',
-        'menu': menu,
-        #'float': 28.56,
-        #'lst': [1, 2, 'abc', True],
-        #'set': {1, 2, 3, 2, 5},
-        #'dict': {'key_1': 'value_1', 'key_2': 'value_2'},
-        #'obj': MyClass(10, 20),
-        #'url': slugify("The main page"),
-        #'posts': Test_app.published.all().select_related('cat'),
-        'cat_selected': 0,
-                 }
+    title_page = 'Главная страница'
+    cat_selected = 0
+    # extra_context = {
+    #     'title': 'главная страница',
+    #     'menu': menu,
+    #     #'float': 28.56,
+    #     #'lst': [1, 2, 'abc', True],
+    #     #'set': {1, 2, 3, 2, 5},
+    #     #'dict': {'key_1': 'value_1', 'key_2': 'value_2'},
+    #     #'obj': MyClass(10, 20),
+    #     #'url': slugify("The main page"),
+    #     #'posts': Test_app.published.all().select_related('cat'),
+    #     'cat_selected': 0,
+    #              }
 
     def get_queryset(self):
         return Test_app.published.all().select_related('cat')
@@ -47,6 +37,7 @@ class TestAppHome(ListView):
 #     with open(f"uploads/{f.name}", 'wb+') as destination:
 #         for chunk in f.chunks():
 #             destination.write(chunk)
+
 def about(request):
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
@@ -57,7 +48,7 @@ def about(request):
     else:
         form = UploadFileForm()
     return render(request, 'test_app/about.html',
-                  {'title': 'О сайте', 'menu': menu, 'form': form})
+                  {'title': 'О сайте', 'form': form})
 def categories(request, cat_id):
     return HttpResponse(f"<h1>Статьи категории</h1><p>id: {cat_id}</p>")
 
@@ -75,18 +66,18 @@ def archive(request, year):
 def page_not_found(request, exception):
     return HttpResponseNotFound(f"<h1>Страница не найдена</h1>")
 
-def show_post(request, post_slug):
-    post = get_object_or_404(Test_app, slug=post_slug)
+# def show_post(request, post_slug):
+#     post = get_object_or_404(Test_app, slug=post_slug)
+#
+#     data = {
+#         'title': post.title,
+#         'menu': menu,
+#         'post': post,
+#         'cat_selected': 1,
+#     }
+#     return render(request, 'test_app/post.html', data)
 
-    data = {
-        'title': post.title,
-        'menu': menu,
-        'post': post,
-        'cat_selected': 1,
-    }
-    return render(request, 'test_app/post.html', data)
-
-class ShowPost(DetailView):
+class ShowPost(DataMixin, DetailView):
     model = Test_app
     template_name = 'test_app/post.html'
     slug_url_kwarg = 'post_slug'
@@ -94,27 +85,43 @@ class ShowPost(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = context['post'].title
-        context['menu'] = menu
-        return context
+        return self.get_mixin_context(context, title=context['post'].title)
 
     def get_object(self, queryset=None):
         return get_object_or_404(Test_app.published, slug=self.kwargs[self.slug_url_kwarg])
 
-class AddPage(FormView):
+class AddPage(DataMixin, CreateView):
     form_class = AddPostForm
+    # model = Test_app
+    # fields = '__all__'
+    template_name = 'test_app/addpage.html'
+    # success_url = reverse_lazy("home")
+    title_page = 'Добавление статьи'
+    # extra_context = {
+    #         'menu': menu,
+    #         'title': 'Добавление статьи',
+    #     }
+
+class UpdatePage(DataMixin, UpdateView):
+    model = Test_app
+    fields = ['title', 'content', 'photo', 'is_published', 'cat']
     template_name = 'test_app/addpage.html'
     success_url = reverse_lazy("home")
-    extra_context = {
-            'menu': menu,
-            'title': 'Добавление статьи',
-        }
+    title_page = 'Редактирование статьи'
+    # extra_context = {
+    #         'menu': menu,
+    #         'title': 'Редактирование статьи',
+    #     }
 
-    def form_valid(self, form):
-        print(form.cleaned_data)
-        form.save()
-        return super().form_valid(form)
-
+class DeletePage(DataMixin, DeleteView):
+    model = Test_app
+    template_name = 'test_app/delpage.html'
+    success_url = reverse_lazy("home")
+    title_page = 'Удаление статьи'
+    # extra_context = {
+    #     'menu': menu,
+    #     'title': 'Удаление статьи',
+    # }
 
 # class AddPage(View):
 #     def get(self, request):
@@ -155,7 +162,7 @@ def show_category(request, cat_slug):
     }
     return render(request, 'test_app/index.html', context=data)
 
-class TestAppCategory(ListView):
+class TestAppCategory(DataMixin, ListView):
     template_name = 'test_app/index.html'
     context_object_name = 'posts'
     allow_empty = False
@@ -166,26 +173,27 @@ class TestAppCategory(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         cat = context['posts'][0].cat
-        context['title'] = 'Категория - ' + cat.name
-        context['menu'] = menu
-        context['cat_selected'] = cat.pk
-        return context
+        return self.get_mixin_context(context, title='Категория - ' + cat.name, cat_selected=cat.pk)
+        # context['title'] = 'Категория - ' + cat.name
+        # context['menu'] = menu
+        # context['cat_selected'] = cat.pk
+        # return context
 
 
-def show_tag_postlist(request, tag_slug):
-    tag = get_object_or_404(TagPost, slug=tag_slug)
-    posts = tag.tags.filter(is_published=Test_app.Status.PUBLISHED).select_related("cat")
+# def show_tag_postlist(request, tag_slug):
+#     tag = get_object_or_404(TagPost, slug=tag_slug)
+#     posts = tag.tags.filter(is_published=Test_app.Status.PUBLISHED).select_related("cat")
+#
+#     data = {
+#         'title': f"Тег: {tag.tag}",
+#         'menu': menu,
+#         'posts': posts,
+#         'cat_selected': None
+#     }
+#
+#     return render(request, 'test_app/index.html', context=data)
 
-    data = {
-        'title': f"Тег: {tag.tag}",
-        'menu': menu,
-        'posts': posts,
-        'cat_selected': None
-    }
-
-    return render(request, 'test_app/index.html', context=data)
-
-class ShowTagPostList(ListView):
+class ShowTagPostList(DataMixin, ListView):
     template_name = 'test_app/index.html'
     allow_empty = False
     context_object_name = 'posts'
@@ -195,7 +203,8 @@ class ShowTagPostList(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         tag = TagPost.objects.get(slug=self.kwargs['tag_slug'])
-        context['title'] = 'Тэг - ' + repr(tag.tag)
-        context['menu'] = menu
-        context['cat_selected'] = None
-        return context
+        return self.get_mixin_context(context, title='Тэг: ' + tag.tag)
+        # context['title'] = 'Тэг - ' + repr(tag.tag)
+        # context['menu'] = menu
+        # context['cat_selected'] = None
+        # return context
