@@ -1,3 +1,4 @@
+from django.core.paginator import Paginator
 from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
@@ -16,6 +17,7 @@ class TestAppHome(DataMixin, ListView):
     context_object_name = 'posts'
     title_page = 'Главная страница'
     cat_selected = 0
+
     # extra_context = {
     #     'title': 'главная страница',
     #     'menu': menu,
@@ -39,16 +41,14 @@ class TestAppHome(DataMixin, ListView):
 #             destination.write(chunk)
 
 def about(request):
-    if request.method == 'POST':
-        form = UploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            # handle_uploaded_file(form.cleaned_data['file'])
-            fp = UploadFiles(file=form.cleaned_data['file'])
-            fp.save()
-    else:
-        form = UploadFileForm()
+    contact_list = Test_app.published.all()
+    paginator = Paginator(contact_list, 3)
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     return render(request, 'test_app/about.html',
-                  {'title': 'О сайте', 'form': form})
+                  {'title': 'О сайте', 'page_obj': page_obj})
 def categories(request, cat_id):
     return HttpResponse(f"<h1>Статьи категории</h1><p>id: {cat_id}</p>")
 
@@ -166,6 +166,7 @@ class TestAppCategory(DataMixin, ListView):
     template_name = 'test_app/index.html'
     context_object_name = 'posts'
     allow_empty = False
+
 
     def get_queryset(self):
         return Test_app.published.filter(cat__slug=self.kwargs['cat_slug']).select_related("cat")
