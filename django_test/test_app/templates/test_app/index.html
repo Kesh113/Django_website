@@ -29,7 +29,7 @@
 			<a href="?page={{ page_obj.previous_page_number }}">&lt;</a>
 		</li>
 		{% endif %}
-		{% for p in page_obj.paginator.page_range %}
+		{% for p in paginator.page_range %}
 		{% if page_obj.number == p %}
 		<li class="page-num page-num-selected"></li>
 		{% elif p >= page_obj.number|add:-2 and p <= page_obj.number|add:2 %}
