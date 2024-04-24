@@ -1,3 +1,5 @@
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render, redirect, get_object_or_404
@@ -40,6 +42,7 @@ class TestAppHome(DataMixin, ListView):
 #         for chunk in f.chunks():
 #             destination.write(chunk)
 
+@login_required
 def about(request):
     contact_list = Test_app.published.all()
     paginator = Paginator(contact_list, 3)
@@ -90,7 +93,7 @@ class ShowPost(DataMixin, DetailView):
     def get_object(self, queryset=None):
         return get_object_or_404(Test_app.published, slug=self.kwargs[self.slug_url_kwarg])
 
-class AddPage(DataMixin, CreateView):
+class AddPage(LoginRequiredMixin, DataMixin, CreateView):
     form_class = AddPostForm
     # model = Test_app
     # fields = '__all__'
@@ -101,6 +104,11 @@ class AddPage(DataMixin, CreateView):
     #         'menu': menu,
     #         'title': 'Добавление статьи',
     #     }
+
+    def form_valid(self, form):
+        w = form.save(commit=False)
+        w.author = self.request.user
+        return super().form_valid(form)
 
 class UpdatePage(DataMixin, UpdateView):
     model = Test_app
