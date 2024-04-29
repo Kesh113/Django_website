@@ -11,6 +11,8 @@ from users.forms import LoginUserForm, RegisterUserForm, ProfileUserForm
 
 from users.forms import UserPasswordChangeForm
 
+import settings
+
 
 class LoginUser(LoginView):
     form_class = LoginUserForm
@@ -42,7 +44,9 @@ class ProfileUser(LoginRequiredMixin, UpdateView):
     model = get_user_model()
     form_class = ProfileUserForm
     template_name = 'users/profile.html'
-    extra_context = {'title': "Профиль пользователя"}
+    extra_context = {'title': "Профиль пользователя",
+                     'default_image': settings.DEFAULT_USER_IMAGE
+                     }
 
     def get_success_url(self):
         return reverse_lazy('users:profile')

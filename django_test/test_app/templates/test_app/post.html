@@ -23,4 +23,7 @@
 {% endif %}
 
 {{post.content|linebreaks}}
+{% if perms.test_app.change_test_app %}
+<p><a href="{% url 'edit_page' post.slug %}">Редактировать</a> </p>
+{% endif %}
 {% endblock %}

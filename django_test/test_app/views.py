@@ -1,5 +1,5 @@
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.paginator import Paginator
 from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render, redirect, get_object_or_404
@@ -93,7 +93,7 @@ class ShowPost(DataMixin, DetailView):
     def get_object(self, queryset=None):
         return get_object_or_404(Test_app.published, slug=self.kwargs[self.slug_url_kwarg])
 
-class AddPage(LoginRequiredMixin, DataMixin, CreateView):
+class AddPage(PermissionRequiredMixin, LoginRequiredMixin, DataMixin, CreateView):
     form_class = AddPostForm
     # model = Test_app
     # fields = '__all__'
@@ -104,13 +104,14 @@ class AddPage(LoginRequiredMixin, DataMixin, CreateView):
     #         'menu': menu,
     #         'title': 'Добавление статьи',
     #     }
+    permission_required = 'test_app.add_test_app' # <приложение>.<действие>_<таблица>
 
     def form_valid(self, form):
         w = form.save(commit=False)
         w.author = self.request.user
         return super().form_valid(form)
 
-class UpdatePage(DataMixin, UpdateView):
+class UpdatePage(PermissionRequiredMixin, DataMixin, UpdateView):
     model = Test_app
     fields = ['title', 'content', 'photo', 'is_published', 'cat']
     template_name = 'test_app/addpage.html'
@@ -120,6 +121,7 @@ class UpdatePage(DataMixin, UpdateView):
     #         'menu': menu,
     #         'title': 'Редактирование статьи',
     #     }
+    permission_required = 'test_app.change_test_app'
 
 class DeletePage(DataMixin, DeleteView):
     model = Test_app
@@ -153,6 +155,7 @@ class DeletePage(DataMixin, DeleteView):
 #         }
 #         return render(request, 'test_app/addpage.html', data)
 
+@permission_required(perm='test_app.add_test_app', raise_exception=True)
 def contact(request):
     return HttpResponse("Обратная связь")
 
