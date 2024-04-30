@@ -11,7 +11,7 @@ from users.forms import LoginUserForm, RegisterUserForm, ProfileUserForm
 
 from users.forms import UserPasswordChangeForm
 
-import settings
+from django_test import settings
 
 
 class LoginUser(LoginView):

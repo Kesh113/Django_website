@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-hmw^5)cd7#4+o&pqk@cz@1r=zvoubpt*6b+bifyz=)ckenmg_4
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'testapp.ru']
 INTERNAL_IPS = ['127.0.0.1']
 
 
@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'test_app.apps.TestAppConfig',
     'users',
     'debug_toolbar',
+    'social_django',
 ]
 
 MIDDLEWARE = [
@@ -143,6 +144,7 @@ LOGOUT_REDIRECT_URL = 'home'
 LOGIN_URL = 'users:login'
 
 AUTHENTICATION_BACKENDS = [
+    'social_core.backends.github.GithubOAuth2',
     'django.contrib.auth.backends.ModelBackend',
     'users.authentication.EmailAuthBackend',
 ]
@@ -162,3 +164,19 @@ EMAIL_ADMIN = EMAIL_HOST_USER
 AUTH_USER_MODEL = 'users.User'
 
 DEFAULT_USER_IMAGE = MEDIA_URL + 'users/default.png'
+
+SOCIAL_AUTH_GITHUB_KEY = 'dba9f8a7ed6b6de4f81e'
+SOCIAL_AUTH_GITHUB_SECRET = 'fb2d7f837524762223ba70d5f29baf9e8a6f0cd7'
+
+SOCIAL_AUTH_PIPELINE = (
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.auth_allowed',
+    'social_core.pipeline.social_auth.social_user',
+    'social_core.pipeline.user.get_username',
+    'social_core.pipeline.user.create_user',
+    'users.pipeline.new_users_handler',  # <--- set the path to the function
+    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.load_extra_data',
+    'social_core.pipeline.user.user_details',
+)

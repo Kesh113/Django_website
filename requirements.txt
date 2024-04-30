@@ -2,3 +2,4 @@ Django~=5.0.4
 Pillow~=10.3.0
 Django-extensions~=3.2.3
 Django-debug-toolbar~=4.3.0
+social-auth-app-django~=5.4.1
