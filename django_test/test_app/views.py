@@ -8,7 +8,7 @@ from django.template.loader import render_to_string
 from django.template.defaultfilters import slugify
 from django.views import View
 from django.views.generic import TemplateView, ListView, DetailView, FormView, CreateView, UpdateView, DeleteView
-
+from django.core.cache import cache
 from .forms import AddPostForm, UploadFileForm, ContactForm
 from .models import Test_app, Category, TagPost, UploadFiles
 from .utils import DataMixin
@@ -34,7 +34,7 @@ class TestAppHome(DataMixin, ListView):
     #              }
 
     def get_queryset(self):
-        return Test_app.published.all().select_related('cat')
+        return cache.get_or_set('women_posts', Test_app.published.all().select_related('cat'), 60)
 
 
 # def handle_uploaded_file(f):
